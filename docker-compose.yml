@@ -1,0 +1,25 @@
+# One command starts both halves:  docker compose up --build
+#
+# The page calls /api/health, the Vite dev server proxies that to the backend
+# container by service name, and FastAPI sees the path unchanged. That is the same
+# shape as production, where a Vercel top-level rewrite routes /api/* to the
+# Python service with the original path intact.
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATA_DIR: /srv/data
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # Vite's proxy target. Docker's internal DNS resolves `backend` to the
+      # service above; there is no need for host networking or an IP.
+      BACKEND_URL: http://backend:8000
+    depends_on:
+      - backend

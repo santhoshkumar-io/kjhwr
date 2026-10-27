@@ -1,0 +1,90 @@
+/* Minimal styling for Phase 3. Real layout work is Phase 7, but the page should
+   not look broken in the meantime, and a dark-mode-safe palette costs nothing now. */
+
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #5a6472;
+  --border: #e2e6eb;
+  --accent: #0b6e4f;
+  --error: #9b2226;
+
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #15181c;
+    --fg: #f2f4f6;
+    --muted: #9aa5b1;
+    --border: #2b3138;
+    --accent: #4ade80;
+    --error: #f87171;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+main {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2.5rem 1rem;
+}
+
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.6rem;
+  letter-spacing: -0.01em;
+}
+
+.subtitle, .label, footer p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.subtitle { font-size: 0.95rem; }
+
+.panel {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.label { font-size: 0.85rem; }
+
+.number {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 2.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1.1;
+}
+
+.status {
+  margin: 2rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+}
+
+.status.error {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+footer {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}

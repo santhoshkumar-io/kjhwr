@@ -1,0 +1,26 @@
+# Development dependencies: everything in requirements.txt, plus tooling that
+# must NOT ship to production.
+#
+# Local setup (uv manages the 3.12 interpreter; nothing is installed into the
+# macOS system Python):
+#     uv venv --python 3.12 .venv
+#     uv pip install -r backend/requirements-dev.txt
+
+-r requirements.txt
+
+pytest==9.1.1
+
+# FastAPI's TestClient needs httpx.
+httpx==0.28.1
+
+# Makes Python verify TLS against the operating system's trust store instead of
+# OpenSSL's own bundle at /etc/ssl/cert.pem.
+#
+# Needed only on this network, which runs a TLS-inspecting proxy (Netskope). Its
+# root CA is in the macOS keychain, so curl and the system Python 3.9 trust it,
+# but the uv-managed CPython 3.12 reads /etc/ssl/cert.pem, which does not contain
+# it - so every HTTPS call failed with CERTIFICATE_VERIFY_FAILED.
+#
+# Dev-only: it is used by the two fetch scripts, which never run in production,
+# and both import it inside try/except ImportError so they work without it.
+truststore==0.10.5

@@ -1,26 +1,14 @@
-# Backend dependencies, pinned. Decision 0003 chose Python 3.12 + pandas + pytest.
+# Runtime dependencies, pinned. Decision 0003: Python 3.12 + FastAPI + pandas.
 #
-# Local setup (uv manages the 3.12 interpreter; nothing is installed into the
-# macOS system Python):
-#     uv venv --python 3.12 .venv
-#     uv pip install -r backend/requirements.txt
+# This file is what the deployed Vercel function installs, and Python has no
+# tree-shaking - everything listed ends up in the bundle. So dev-only packages
+# belong in requirements-dev.txt, not here.
 #
-# Phase 3's Dockerfile installs from this same file, so the container and the
-# local venv cannot drift apart.
-#
-# FastAPI and uvicorn are added in Phase 3, when the server first exists.
+# Measured in Phase 3: these come to 76 MB installed, against Vercel's 500 MB
+# bundle limit, and importing pandas plus loading all 21,344 rows takes 165 ms.
+# That is why decision 0003's open question - whether pandas was too heavy for a
+# serverless function - resolved in favour of keeping it.
 
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
 pandas==3.1.0
-pytest==9.1.1
-
-# Makes Python verify TLS against the operating system's trust store instead of
-# OpenSSL's own bundle at /etc/ssl/cert.pem.
-#
-# Needed because this network runs a TLS-inspecting proxy (Netskope). Its root CA
-# is installed in the macOS keychain, so curl and the system Python 3.9 trust it,
-# but the uv-managed CPython 3.12 reads /etc/ssl/cert.pem, which does not contain
-# it - so every HTTPS call failed with CERTIFICATE_VERIFY_FAILED.
-#
-# Both scripts import it defensively, so they still run where it is absent (for
-# example a container, which has no such proxy in front of it).
-truststore==0.10.5
