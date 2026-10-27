@@ -475,16 +475,23 @@ This answers the customer's second question. It is the part that turns a chart i
    differently — not as a statistics definition.
 2. A clearly labelled bias-corrected panel (`0006`) beside the raw numbers, plus one short
    plain-English paragraph on why the forecast runs high.
-2. A chart: average miss vs how many hours ahead the forecast was made.
+2. A chart: average miss vs how many hours ahead the forecast was made. **Build this by sweeping
+   the hours-ahead setting and comparing whole series — never by bucketing a deadline-mode series
+   by lead time.** In deadline mode one run serves each delivery day, so lead time is a proxy for
+   hour of day (they correlate at 0.9993 on the real data) and such a chart would relabel overnight
+   wind behaviour as forecast staleness. It even slopes the wrong way. Measured in Phase 2; see
+   `docs/notes/phase-2.md`.
 3. A chart: average miss by hour of the day.
 4. A table: the 5 worst days, with their average miss.
 5. All of it follows the same date range and mode as Screen 1.
 
 ### Exit check
 - A person who has never seen the app can explain each big number from its sentence alone.
-- The hours-ahead chart shows bigger misses for forecasts made earlier. Phase 0 measured this and
-  the data does rise: MAE goes from **1,691 MW at 0 h** to **2,320 MW at 46 h**. If the chart does
-  not show that, something is wrong with the selection logic, not with the expectation.
+- The hours-ahead chart shows bigger misses for forecasts made earlier, **when built by sweeping X**:
+  MAE goes from **1,691 MW at 0 h** to **2,320 MW at 46 h**. If the chart does not show that, check
+  first that it is sweeping X rather than bucketing a single deadline-mode series by lead time —
+  that mistake produces a chart that slopes the wrong way for a reason that has nothing to do with
+  forecasting.
 - Above about 42 hours the comparison stops being like-for-like, because the point set shrinks
   (100% coverage to X=42, then 98% / 90% / 85% / 81% at 44 / 46 / 47 / 48). The matched-point
   readout must make that visible, and the notes must say it.
