@@ -87,3 +87,15 @@ export function formatHeld(isHeld) {
 }
 
 export { MISSING }
+
+/**
+ * Megawatts with an explicit sign, for bias.
+ *
+ * Bias is the one measure whose direction is the point: +1,730 and -1,730 mean opposite
+ * things to a buyer. A bare "1,730" would hide that, so the sign is always shown.
+ */
+export function formatSignedMw(value) {
+  if (value === null || value === undefined) return MISSING
+  const sign = value > 0 ? '+' : value < 0 ? '−' : ''
+  return `${sign}${Math.abs(value).toLocaleString('en-GB')}`
+}

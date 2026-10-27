@@ -72,3 +72,35 @@ export function controlsToSearch(controls) {
 export function seriesUrl(controls) {
   return `/api/series${controlsToSearch(controls)}`
 }
+
+/** The `/api/metrics` URL for these controls - the same settings Screen 1 uses. */
+export function metricsUrl(controls) {
+  return `/api/metrics${controlsToSearch(controls)}`
+}
+
+/** How far apart the swept points are, in hours. 25 points across 0-48. */
+export const SWEEP_STEP = 2
+
+/**
+ * The URLs for the "miss vs how far ahead" sweep.
+ *
+ * This chart must be built by sweeping X across whole series, never by bucketing a
+ * deadline-mode series by lead time. In deadline mode one run serves each delivery day,
+ * so a target's lead time is just its hour of day plus a constant - the two correlate at
+ * 0.9993 - and a lead-time-bucketed chart relabels overnight wind behaviour as forecast
+ * staleness. It even slopes the wrong way.
+ *
+ * The sweep follows the selected **date range** but not the mode, because sweeping the
+ * hours-ahead setting is itself the mode. That is said on the chart so it does not look
+ * like the mode switch is being ignored.
+ */
+export function sweepPoints(controls) {
+  const points = []
+  for (let hours = MIN_HOURS; hours <= MAX_HOURS; hours += SWEEP_STEP) {
+    points.push({
+      hours,
+      url: metricsUrl({ ...controls, mode: HOURS_AHEAD, hours }),
+    })
+  }
+  return points
+}

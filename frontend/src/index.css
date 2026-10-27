@@ -410,3 +410,192 @@ footer {
   font-weight: 400;
   color: var(--muted);
 }
+
+/* ---- Screens ---- */
+
+.screen {
+  margin: 2.25rem 0 0;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.screen:first-of-type { border-top: 0; padding-top: 0; }
+
+.screen-heading {
+  margin: 0 0 0.9rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+/* ---- The four numbers ---- */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.9rem;
+  margin: 0 0 0.6rem;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  padding: 1rem 1.1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* P90 is the number a buyer actually sizes cover against, so it carries the accent. */
+.tile-emphasis { border-color: var(--series-forecast); }
+
+.tile-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tile-measure {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* Proportional figures, not tabular: equal-width digits make a large standalone number
+   look loose. tabular-nums belongs in the tables and axis ticks, where digits align. */
+.tile-value {
+  margin: 0;
+  font-size: 2.1rem;
+  font-weight: 600;
+  line-height: 1.05;
+  color: var(--fg);
+}
+
+.tile-unit {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.tile-sentence {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.tiles-foot {
+  margin: 0 0 1.25rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.tiles-foot strong { color: var(--fg); }
+
+/* ---- Bias-corrected panel ---- */
+
+.panel {
+  margin: 1.25rem 0 0;
+  padding: 1.1rem 1.25rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.panel-heading {
+  margin: 0 0 0.8rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.corrected-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.corrected-row li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.corrected-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.corrected-value {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.panel-note {
+  margin: 0.9rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.panel-prose {
+  margin: 0.9rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  max-width: 58rem;
+  color: var(--fg);
+}
+
+/* ---- Two charts side by side ---- */
+
+.chart-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.chart-plot-small { height: 17rem; }
+
+.chart-pair .chart-title { font-size: 0.98rem; }
+
+/* ---- Worst days ---- */
+
+.worst-days {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+.worst-days th,
+.worst-days td {
+  padding: 0.45rem 0.7rem;
+  text-align: left;
+  border-bottom: 1px solid var(--grid);
+  font-weight: 400;
+}
+
+.worst-days thead th {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.worst-days tbody th { color: var(--fg); font-weight: 600; }
+
+.worst-days .numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.worst-days tbody tr:last-child th,
+.worst-days tbody tr:last-child td { border-bottom: 0; }

@@ -1,130 +1,21 @@
-import { useEffect, useState } from 'react'
-
-import Controls from './Controls.jsx'
 import ForecastChart from './ForecastChart.jsx'
 import SeriesTable from './SeriesTable.jsx'
-import { HOURS_AHEAD, controlsToSearch, readControls, seriesUrl } from '../lib/seriesUrl.js'
+import { HOURS_AHEAD, seriesUrl } from '../lib/seriesUrl.js'
+import { FAILED, READY, REFRESHING, getJson, useLoader } from '../lib/useFetch.js'
 
 // Screen 1: what the forecast said before buying, and what really came.
 //
-// The state machine extends the Phase 3 pattern rather than replacing it, but adds one
-// state Phase 3 did not need: REFRESHING. Moving the slider refetches, and swapping the
-// chart for a spinner on every step would flash the layout and lose the reader's place.
-// So a refetch holds the previous chart at reduced opacity instead.
-//
-// The `cancelled` flag in each effect is load-bearing, not boilerplate: StrictMode
-// double-invokes effects in development, and the slider can outrun its own requests, so a
-// late response must not overwrite a newer one.
+// The settings now arrive as a prop - App owns them, because Screen 2 follows the same
+// range and mode. The fetching pattern moved to useLoader for the same reason: two
+// screens needing identical behaviour should not carry two copies of it.
 
-const LOADING = 'loading'
-const REFRESHING = 'refreshing'
-const READY = 'ready'
-const FAILED = 'failed'
-
-// Long enough that dragging the slider sends one request instead of forty, short enough
-// that releasing it feels immediate. Each response is around 250 KB.
 const DEBOUNCE_MS = 200
 
-const GENERIC_FAILURE = 'Could not load data. The server may be starting up or unavailable.'
-
-/** The server's own sentence if it sent one, otherwise the generic message. */
-async function failureMessage(response) {
-  try {
-    const body = await response.json()
-    if (body && typeof body.error === 'string') return body.error
-  } catch {
-    // Not JSON - fall through to the generic message.
-  }
-  return GENERIC_FAILURE
-}
-
-export default function Screen1() {
-  const [bounds, setBounds] = useState(null)
-  const [controls, setControls] = useState(null)
-  const [data, setData] = useState(null)
-  const [status, setStatus] = useState(LOADING)
-  const [message, setMessage] = useState(null)
-
-  // The delivery range comes from the server, so the date picker's limits are the real
-  // ones and no date is typed into the page (AGENTS.md rule 2).
-  useEffect(() => {
-    let cancelled = false
-
-    fetch('/api/health')
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        return response.json()
-      })
-      .then((health) => {
-        if (cancelled) return
-        const range = {
-          earliest: health.delivery_from.slice(0, 10),
-          latest: health.delivery_to.slice(0, 10),
-        }
-        setBounds(range)
-        setControls(readControls(window.location.search, range))
-      })
-      .catch(() => {
-        if (cancelled) return
-        setMessage(GENERIC_FAILURE)
-        setStatus(FAILED)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!controls) return undefined
-    let cancelled = false
-
-    // No delay for the first load; debounce only once there is a chart to keep.
-    const delay = data ? DEBOUNCE_MS : 0
-    const timer = setTimeout(() => {
-      setStatus((current) => (current === READY ? REFRESHING : current))
-
-      fetch(seriesUrl(controls))
-        .then(async (response) => {
-          if (!response.ok) throw new Error(await failureMessage(response))
-          return response.json()
-        })
-        .then((series) => {
-          if (cancelled) return
-          setData(series)
-          setMessage(null)
-          setStatus(READY)
-        })
-        .catch((error) => {
-          if (cancelled) return
-          setMessage(error.message || GENERIC_FAILURE)
-          setStatus(FAILED)
-        })
-    }, delay)
-
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
-    // `data` is read to decide the debounce delay, but must not retrigger the fetch.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [controls])
-
-  // Keep the address bar in step, so the view can be shared or reloaded as it stands.
-  // The fragment is carried over deliberately: replacing the URL with the query string
-  // alone would drop `#table`, so a link to the table view would lose it on first render.
-  useEffect(() => {
-    if (!controls) return
-    window.history.replaceState(null, '', `${controlsToSearch(controls)}${window.location.hash}`)
-  }, [controls])
-
-  if (!controls || !bounds) {
-    return (
-      <p className={`status${status === FAILED ? ' error' : ''}`}>
-        {status === FAILED ? message : 'Loading data…'}
-      </p>
-    )
-  }
+export default function Screen1({ controls }) {
+  const url = seriesUrl(controls)
+  const { data, status, message } = useLoader(url, () => getJson(url), {
+    debounceMs: DEBOUNCE_MS,
+  })
 
   const applied = data?.applied
   const settingSentence =
@@ -133,15 +24,14 @@ export default function Screen1() {
       : `newest forecast available at the ${applied?.deadline_hour_utc ?? 11}:00 UTC day-ahead deadline`
 
   return (
-    <>
-      <Controls
-        controls={controls}
-        bounds={bounds}
-        onChange={setControls}
-        disabled={status === LOADING}
-      />
+    <section className="screen" aria-labelledby="screen1-heading">
+      <h2 id="screen1-heading" className="screen-heading">
+        What the forecast said, and what came
+      </h2>
 
-      {message && <p className="status error">{message}</p>}
+      {status === FAILED && <p className="status error">{message}</p>}
+
+      {!data && status !== FAILED && <p className="status">Loading data…</p>}
 
       {data && (
         <>
@@ -159,8 +49,6 @@ export default function Screen1() {
           </div>
         </>
       )}
-
-      {!data && status !== FAILED && <p className="status">Loading data…</p>}
-    </>
+    </section>
   )
 }
