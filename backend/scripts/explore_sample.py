@@ -28,6 +28,17 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+try:
+    # Optional, and the only non-stdlib import in this file. On a 3.12 venv it makes
+    # TLS verify against the OS trust store, which this network's inspecting proxy
+    # requires. On the bare system Python 3.9 it is absent and not needed, so the
+    # script stays runnable with no dependencies at all.
+    import truststore
+
+    truststore.inject_into_ssl()
+except ImportError:
+    pass
+
 BASE = "https://data.elexon.co.uk/bmrs/api/v1"
 
 # Delivery range, from decision 0002: decisions made 1-31 Jan buy delivery 2 Jan - 1 Feb.
