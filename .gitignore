@@ -1,0 +1,29 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Build / deploy
+.vercel/
+
+# OS / editor
+.DS_Store
+.idea/
+*.swp
+
+# Editor state
+.vscode/
