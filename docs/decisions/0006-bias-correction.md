@@ -4,20 +4,35 @@
 
 ## Context — a finding, not a theory
 
-Before any code was written, one day of the real comparison was computed by hand against the live
-API. For 15 January 2026 under the [0001](0001-buying-deadline.md) deadline (cutoff 14 Jan 11:00 UTC, so the 09:30 run):
+### Month-wide, measured in Phase 0
+
+The whole range in [0002](0002-date-range.md), deadline mode per [0001](0001-buying-deadline.md),
+hourly forecast held across the hour per [0004](0004-matching-times.md):
 
 ```
-n = 24 hourly targets
-mean bias = +1,094 MW
-MAE       =  1,094 MW
+matched 1,488 of 1,488 half-hours (100%)
+MAE        2,016 MW        RMSE   2,510 MW
+mean bias +1,730 MW        P90    4,189 MW
+bias-corrected:  MAE 1,407 MW     P90 3,132 MW
+forecast was BELOW actual in 234 of 1,488 half-hours (16%)
 ```
 
-MAE and mean bias are **identical**, because every single one of the 24 errors was positive. The
-forecast was higher than the actual at every hour of the day, by between +113 MW and +2,386 MW.
+Removing the mean bias cuts MAE from **2,016 to 1,407 MW** — a 30% reduction. That is the size of
+the prize.
 
-That is not the signature of forecast noise. It is the signature of the two feeds measuring
-different quantities:
+### Why the gap is structural and not forecasting skill
+
+The clearest evidence is what happens at **zero lead time**. Selecting the newest forecast published
+at or before the target time itself still leaves a bias of **+1,473 MW**:
+
+| Lead time | MAE | Mean bias |
+|---|---|---|
+| 0 h | 1,691 MW | +1,473 MW |
+| 24 h | 1,945 MW | +1,733 MW |
+| 42 h | 2,226 MW | +1,848 MW |
+
+A forecast published at the moment of delivery cannot be wrong by 1,473 MW through *forecasting*
+error. Something other than weather prediction accounts for most of that gap:
 
 - **WINDFOR** is a forecast of *available* wind generation — what the wind could produce.
 - **FUELHH** WIND is *metered* output — what the wind actually delivered, after curtailment and
@@ -25,6 +40,21 @@ different quantities:
 
 In GB, wind is curtailed regularly. So forecast > actual is expected, and a large part of the gap
 is **not forecast error at all**.
+
+### One worked day, for illustration only
+
+15 January 2026 under the same deadline (cutoff 14 Jan 11:00 UTC, so the 09:30 run):
+
+```
+n = 24 hourly targets
+mean bias = +1,094 MW
+MAE       =  1,094 MW
+```
+
+On that day MAE and mean bias were identical, because every one of the 24 errors was positive
+(+113 MW to +2,386 MW). **Do not generalise from this day:** month-wide, the forecast was below
+actual 16% of the time. The bias is systematic and large, but it is not absolute, and the app must
+not claim it is.
 
 ## Decision
 

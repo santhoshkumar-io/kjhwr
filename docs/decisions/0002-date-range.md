@@ -33,5 +33,9 @@ silently answer a different question than the brief asked.
 
 - `actuals.csv`: 1,488 half-hourly rows expected (January has no daylight-saving transition, so
   every day really does have 48 half-hours).
-- `forecasts.csv`: roughly 20,000 rows (~8 runs/day x 73 hourly targets x ~34 publish days).
+- `forecasts.csv`: **19,856 rows**, measured in Phase 0 — 272 runs (exactly 8 per day across 34
+  publish days) x 73 hourly targets per run. Of these, 4,081 (21%) are hindcast rows whose target
+  precedes their own publish time; Phase 2 filters them out.
+- Both feeds come back in a **single** `/stream` request each. The 7-day range cap applies only to
+  the paged endpoint form, so no chunking is needed. See `docs/notes/phase-0.md`.
 - UI copy may say "January 2026"; the axis and date picker show the real delivery range.

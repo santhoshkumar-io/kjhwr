@@ -177,15 +177,18 @@ yet known is whether they hold for all 31 delivery days.
    stays hourly; count the runs per day and the largest gap between runs.
 3. Confirm the fixed-wall-clock horizon, and measure the **effective maximum lead time** per target.
    This is the real evidence for where the 0-48 slider stops being useful.
-4. Measure the API's date-range cap per request, so Phase 1 knows how to chunk. Assume 7 days until
-   measured.
+4. Assert the date-range cap on **both** endpoint forms, because Phase 1 depends on it:
+   the paged form `/datasets/{ds}` returns **400** for a range over 7 days, while
+   `/datasets/{ds}/stream` has **no cap** and returns the whole range in one request. Note that
+   `/stream` returns a **bare JSON array** — there is no `{"data": [...]}` wrapper. This is the
+   most likely thing to break a naive parser.
 5. Write all of it into `docs/notes/phase-0.md` with the real rows as proof.
 
 ### Exit check
 - `docs/notes/phase-0.md` states the time step of each feed, with the real rows that prove it.
 - Runs per day and the largest publish gap, for the whole month, not one day.
 - The measured lead-time ceiling.
-- The API's per-request date-range cap.
+- The date-range cap result for both endpoint forms, including the deliberate 400.
 - No delivery day is entirely missing from the actuals.
 
 ### Build prompt
@@ -222,8 +225,9 @@ Every later phase reads these files. Saving them also means the live app never d
 
 ### Steps (for the builder)
 1. Write `backend/scripts/fetch_data.py`. Download real wind (FUELHH, fuelType WIND) for the target
-   range in `0002`, in small date chunks.
-2. Download WINDFOR forecasts for the publish range in `0002`.
+   range in `0002` in **one `/stream` request** — Phase 0 proved there is no range cap on that
+   endpoint form, so no chunking is needed. Remember `/stream` returns a bare JSON array.
+2. Download WINDFOR forecasts for the publish range in `0002`, likewise in one request.
 3. Remove repeated rows. Keep only the needed fields. Make all times UTC.
 4. Save to `backend/data/actuals.csv` and `backend/data/forecasts.csv`.
 5. Print a summary: row counts, first and last time, number of missing half-hours, number of duplicates removed.
@@ -232,8 +236,8 @@ Every later phase reads these files. Saving them also means the live app never d
 - Real wind has **1,488 rows** (31 delivery days × 48 half-hours), or the summary lists every
   missing half-hour individually.
 - The forecast file holds the **raw hourly** rows: no hold applied, no hindcast rows dropped. Both
-  of those belong in Phase 2 so they stay testable. Expect roughly 20,000 rows
-  (~8 runs/day × 73 targets × ~34 publish days); explain any deviation beyond 10%.
+  of those belong in Phase 2 so they stay testable. Expect **19,856 rows** (272 runs × 73 targets),
+  the figure measured in Phase 0; explain any deviation.
 - No target time appears twice in the real-wind file.
 - No (target time, publish time) pair appears twice in the forecast file.
 - Running the script twice gives files with identical content (check with a file hash).
@@ -245,7 +249,7 @@ docs/decisions/0004-matching-times.md and docs/notes/phase-0.md.
 If 0004 still says TO DECIDE, stop and list the questions.
 
 Do Phase 1 only: Save January's data.
-Before coding, explain the date chunks you will request and why.
+Use one /stream request per feed; Phase 0 proved there is no range cap there.
 
 Write backend/scripts/fetch_data.py and save backend/data/actuals.csv and
 backend/data/forecasts.csv as described in the plan. Use only FUELHH (WIND) and WINDFOR.
@@ -478,9 +482,12 @@ This answers the customer's second question. It is the part that turns a chart i
 
 ### Exit check
 - A person who has never seen the app can explain each big number from its sentence alone.
-- The hours-ahead chart is explained by the notes. It may **not** rise monotonically: the publish
-  cadence is irregular and the horizon has a ceiling. Describe the shape the data actually shows
-  rather than asserting the expected one.
+- The hours-ahead chart shows bigger misses for forecasts made earlier. Phase 0 measured this and
+  the data does rise: MAE goes from **1,691 MW at 0 h** to **2,320 MW at 46 h**. If the chart does
+  not show that, something is wrong with the selection logic, not with the expectation.
+- Above about 42 hours the comparison stops being like-for-like, because the point set shrinks
+  (100% coverage to X=42, then 98% / 90% / 85% / 81% at 44 / 46 / 47 / 48). The matched-point
+  readout must make that visible, and the notes must say it.
 - Changing the date range changes all four numbers.
 - Every number on the screen matches `/api/metrics` for the same settings.
 
