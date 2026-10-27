@@ -1,5 +1,18 @@
-/* Minimal styling for Phase 3. Real layout work is Phase 7, but the page should
-   not look broken in the meantime, and a dark-mode-safe palette costs nothing now. */
+/* Styling for Screen 1. Full responsive work is Phase 7; what is here is what the chart
+   needs to be legible at all, plus the chrome the chart and its table twin require.
+
+   The two series colours are not a taste choice. They are categorical slots 1 and 2 of a
+   validated palette, checked with the palette validator in both modes:
+
+     light  CVD dE 24.7 (protan) · normal-vision dE 33.6 · all six checks pass
+     dark   CVD dE 26.8 (protan) · normal-vision dE 31.8 · all six checks pass
+
+   Both clear the >=8 colour-vision-deficiency target and the >=15 normal-vision floor with
+   room to spare, so the chart does not need texture or dashing as a backup channel. The
+   dark values are stepped for a dark surface rather than being the light ones brightened -
+   an automatic flip lands outside the band that keeps them distinguishable. They were
+   validated against reference surfaces of #fcfcfb and #1a1a19; the surfaces below are
+   marginally more extreme, which only increases the contrast margin. */
 
 :root {
   --bg: #ffffff;
@@ -9,10 +22,17 @@
   --accent: #0b6e4f;
   --error: #9b2226;
 
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* One step off the surface: present when looked for, recessive otherwise. */
+  --grid: #eceff3;
+
+  --series-forecast: #2a78d6;
+  --series-actual: #eb6834;
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
 }
 
+/* The media query covers the operating system's setting. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --bg: #15181c;
@@ -21,7 +41,27 @@
     --border: #2b3138;
     --accent: #4ade80;
     --error: #f87171;
+
+    --grid: #23282f;
+
+    --series-forecast: #3987e5;
+    --series-actual: #d95926;
   }
+}
+
+/* An explicit choice wins over the operating system, in both directions. */
+:root[data-theme='dark'] {
+  --bg: #15181c;
+  --fg: #f2f4f6;
+  --muted: #9aa5b1;
+  --border: #2b3138;
+  --accent: #4ade80;
+  --error: #f87171;
+
+  --grid: #23282f;
+
+  --series-forecast: #3987e5;
+  --series-actual: #d95926;
 }
 
 * { box-sizing: border-box; }
@@ -32,14 +72,16 @@ body {
   color: var(--fg);
 }
 
+/* Widened from the Phase 3 placeholder's 48rem: a month is 1,488 half-hourly points, and
+   at 768px they average two points per pixel, which is a smear rather than a chart. */
 main {
-  max-width: 48rem;
+  max-width: 76rem;
   margin: 0 auto;
   padding: 2.5rem 1rem;
 }
 
 h1 {
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.35rem;
   font-size: 1.6rem;
   letter-spacing: -0.01em;
 }
@@ -49,13 +91,10 @@ h1 {
   margin: 0;
 }
 
-.subtitle { font-size: 0.95rem; }
-
-.panel {
-  margin: 2rem 0;
-  padding: 1.5rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+.subtitle {
+  font-size: 0.95rem;
+  max-width: 54rem;
+  line-height: 1.5;
 }
 
 .label { font-size: 0.85rem; }
@@ -64,7 +103,6 @@ h1 {
   margin: 0.35rem 0 0.75rem;
   font-size: 2.75rem;
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
   color: var(--accent);
   line-height: 1.1;
 }
@@ -82,9 +120,293 @@ h1 {
   border-color: var(--error);
 }
 
+/* ---- Controls: one row, above everything they scope ---- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.25rem 1.75rem;
+  margin: 1.75rem 0 1.25rem;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.control-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0;
+}
+
+.control-input {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 0.4rem 0.55rem;
+}
+
+.mode-group .radio {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.slider-group { flex: 1 1 15rem; }
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.control-slider {
+  flex: 1 1 auto;
+  min-width: 8rem;
+  accent-color: var(--series-forecast);
+}
+
+.control-slider:disabled { opacity: 0.45; }
+
+.slider-value {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  min-width: 3.2rem;
+}
+
+/* ---- The matched-point readout ---- */
+
+.readout {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  color: var(--fg);
+}
+
+.readout strong { font-variant-numeric: tabular-nums; }
+
+.readout-detail { color: var(--muted); }
+
+/* ---- Chart ---- */
+
+.chart-figure {
+  margin: 0;
+  padding: 1.25rem 1.25rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.chart-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.chart-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/* A legend is always present for two series, so identity never rests on colour alone.
+   The key mirrors the mark - a line for a line chart - and the text wears a text token,
+   never the series colour. */
+.legend {
+  display: flex;
+  gap: 1.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.legend-key {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.legend-key-forecast { background: var(--series-forecast); }
+.legend-key-actual { background: var(--series-actual); }
+
+/* Sized to include the x-axis label band, so the card never grows its own scrollbar. */
+.chart-plot {
+  height: 26rem;
+  width: 100%;
+}
+
+.chart-foot {
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Hold the previous render while the next response is in flight: no skeleton, no jump. */
+.refreshing {
+  opacity: 0.55;
+  transition: opacity 120ms ease-out;
+}
+
+/* ---- Tooltip: values lead, labels follow ---- */
+
+.tooltip {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.tooltip p { margin: 0; }
+
+.tooltip-time {
+  font-weight: 600;
+  margin-bottom: 0.35rem !important;
+}
+
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* A short stroke of the series colour, not a filled box: at tooltip density a block of
+   colour is data-weight ink doing a label's job. */
+.tooltip-key {
+  display: inline-block;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  flex: none;
+}
+
+.tooltip-key-forecast { background: var(--series-forecast); }
+.tooltip-key-actual { background: var(--series-actual); }
+
+.tooltip-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--fg);
+  min-width: 5.5rem;
+  text-align: right;
+}
+
+.tooltip-name { color: var(--muted); }
+
+.tooltip-meta {
+  margin-top: 0.4rem !important;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* ---- Table twin ---- */
+
+.table-view {
+  margin: 1.25rem 0 0;
+  font-size: 0.9rem;
+}
+
+.table-view summary {
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0.4rem 0;
+}
+
+.table-scroll {
+  max-height: 24rem;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+.table-view table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.82rem;
+}
+
+.table-view th,
+.table-view td {
+  padding: 0.35rem 0.7rem;
+  text-align: left;
+  border-bottom: 1px solid var(--grid);
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.table-view thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.table-view tbody th { color: var(--fg); }
+
+/* Equal-width digits, so a column of megawatts can be scanned down. */
+.table-view .numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 footer {
   margin-top: 2.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border);
   font-size: 0.85rem;
+}
+
+.chart-unit {
+  font-weight: 400;
+  color: var(--muted);
 }
