@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import Controls from './components/Controls.jsx'
 import Screen1 from './components/Screen1.jsx'
@@ -21,6 +21,12 @@ export default function App() {
   const [bounds, setBounds] = useState(null)
   const [controls, setControls] = useState(null)
   const [failure, setFailure] = useState(null)
+  const [screenFailure, setScreenFailure] = useState(null)
+
+  // Both screens report failures here rather than rendering their own. They fail together
+  // whenever the server is unreachable, so the page shows the problem once. `useCallback`
+  // keeps the identity stable, otherwise the effect that reports it would re-run forever.
+  const reportFailure = useCallback((message) => setScreenFailure(message), [])
 
   // The delivery range comes from the server, so the date picker's limits are the real
   // ones and no date is typed into the page (AGENTS.md rule 2).
@@ -66,15 +72,17 @@ export default function App() {
         </p>
       </header>
 
-      {failure && <p className="status error">{failure}</p>}
+      {(failure || screenFailure) && (
+        <p className="status error">{failure || screenFailure}</p>
+      )}
 
       {!controls && !failure && <p className="status">Loading data…</p>}
 
       {controls && bounds && (
         <>
           <Controls controls={controls} bounds={bounds} onChange={setControls} />
-          <Screen1 controls={controls} />
-          <Screen2 controls={controls} />
+          <Screen1 controls={controls} onFailure={reportFailure} />
+          <Screen2 controls={controls} onFailure={reportFailure} />
         </>
       )}
 

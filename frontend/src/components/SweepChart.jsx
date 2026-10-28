@@ -123,6 +123,9 @@ export default function SweepChart({ points }) {
               tick={{ fill: 'var(--muted)', fontSize: 12 }}
               stroke="var(--grid)"
               tickMargin={8}
+              // Nine fixed ticks fit a half-width desktop card and crowd a phone; this
+              // lets Recharts thin them when there is no room.
+              minTickGap={24}
               label={{
                 value: 'hours before delivery',
                 position: 'insideBottom',

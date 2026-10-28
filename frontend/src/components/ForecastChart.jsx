@@ -170,7 +170,11 @@ export default function ForecastChart({ points }) {
               tick={{ fill: 'var(--muted)', fontSize: 12 }}
               stroke="var(--grid)"
               tickMargin={8}
-              minTickGap={0}
+              // Positive, so Recharts drops labels that would collide rather than
+              // overprinting them. At 0 every tick in the array is forced out, which is
+              // fine on a laptop and unreadable on a phone - and tick density is a prop,
+              // so no stylesheet can fix it.
+              minTickGap={28}
             />
             {/* The unit lives in the heading rather than as an axis label: Recharts
                 places an axis label at a fixed offset, where it collided with the

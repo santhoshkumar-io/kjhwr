@@ -105,7 +105,11 @@ export default function HourOfDayChart({ hours, mode }) {
               tick={{ fill: 'var(--muted)', fontSize: 12 }}
               stroke="var(--grid)"
               tickMargin={8}
-              interval={2}
+              // `interval={2}` pinned exactly 8 labels regardless of width. Letting
+              // Recharts choose, with a minimum gap, keeps the ends labelled and thins
+              // the middle when the chart is narrow.
+              interval="preserveStartEnd"
+              minTickGap={16}
               label={{
                 value: 'delivery hour, UTC',
                 position: 'insideBottom',

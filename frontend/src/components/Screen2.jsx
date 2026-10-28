@@ -81,20 +81,22 @@ function useSweep(controls) {
   return { points, failed }
 }
 
-export default function Screen2({ controls }) {
+export default function Screen2({ controls, onFailure }) {
   const url = metricsUrl(controls)
   const { data, status, message } = useLoader(url, () => getJson(url), {
     debounceMs: DEBOUNCE_MS,
   })
   const sweep = useSweep(controls)
 
+  useEffect(() => {
+    onFailure(status === FAILED ? message : null)
+  }, [status, message, onFailure])
+
   return (
     <section className="screen" aria-labelledby="screen2-heading">
       <h2 id="screen2-heading" className="screen-heading">
         How accurate is the forecast
       </h2>
-
-      {status === FAILED && <p className="status error">{message}</p>}
 
       {!data && status !== FAILED && <p className="status">Loading numbers…</p>}
 

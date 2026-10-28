@@ -17,7 +17,8 @@ export default function WorstDaysTable({ days }) {
         The {days.length} worst delivery days
       </h3>
 
-      <table className="worst-days">
+      <div className="table-scroll table-scroll-flush">
+        <table className="worst-days">
         <thead>
           <tr>
             <th scope="col">Delivery day</th>
@@ -41,8 +42,9 @@ export default function WorstDaysTable({ days }) {
               <td className="numeric">{day.n}</td>
             </tr>
           ))}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
 
       <p className="panel-note">
         Where the average lean equals the typical miss, every half-hour that day was

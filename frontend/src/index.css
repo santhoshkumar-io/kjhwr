@@ -555,9 +555,13 @@ footer {
 
 /* ---- Two charts side by side ---- */
 
+/* `min()` is load-bearing. A bare minmax(26rem, 1fr) sets a 416px floor on the track,
+   and a grid cannot shrink below its own track - so on a 380px phone the row pushed the
+   whole page wider than the viewport and every section then rendered clipped, not just
+   this one. Capping the minimum at 100% lets the track collapse instead. */
 .chart-pair {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(26rem, 100%), 1fr));
   gap: 1rem;
   margin-top: 1.25rem;
 }
@@ -599,3 +603,76 @@ footer {
 
 .worst-days tbody tr:last-child th,
 .worst-days tbody tr:last-child td { border-bottom: 0; }
+
+
+/* ---- Phone ----------------------------------------------------------------
+   The first width breakpoint in the project. Everything above is written for a
+   laptop; this block is only what has to change when the viewport is about the
+   width of a phone, kept together so the mobile behaviour can be read in one
+   place rather than hunted through the file. */
+
+@media (max-width: 40rem) {
+  main {
+    padding: 1.5rem 0.75rem;
+  }
+
+  h1 { font-size: 1.35rem; }
+
+  .subtitle { font-size: 0.9rem; }
+
+  .screen {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+  }
+
+  .screen-heading { font-size: 1.1rem; }
+
+  /* Each control gets its own line: a date field and a 48-step slider side by
+     side are both too cramped to use with a thumb. */
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+  }
+
+  .control-input { width: 100%; }
+
+  /* `flex: 1 1 15rem` is a width basis in the desktop row; once the container is a
+     column that same basis becomes a 15rem HEIGHT, which left a block of dead space
+     under the slider. */
+  .slider-group { flex: 0 0 auto; }
+
+  /* A chart that is 416px tall leaves no room for anything else on a phone
+     screen, so the reader cannot see the chart and its caption together. */
+  .chart-plot { height: 15rem; }
+  .chart-plot-small { height: 13rem; }
+
+  .chart-figure { padding: 1rem 0.85rem 0.85rem; }
+
+  .chart-head { gap: 0.35rem; }
+
+  .tile { padding: 0.85rem 0.9rem 0.95rem; }
+
+  .tile-value { font-size: 1.7rem; }
+
+  .tile-sentence { font-size: 0.82rem; }
+
+  .panel {
+    padding: 0.9rem 1rem 1rem;
+  }
+
+  .panel-prose { font-size: 0.86rem; }
+
+  .corrected-value { font-size: 1.15rem; }
+
+  .table-scroll { max-height: 18rem; }
+}
+
+/* The worst-days table sits inside a panel that already has padding, so its scroll
+   container should not add a second border and inset. */
+.table-scroll-flush {
+  border: 0;
+  border-radius: 0;
+  margin-top: 0;
+}

@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 import ForecastChart from './ForecastChart.jsx'
 import SeriesTable from './SeriesTable.jsx'
 import { HOURS_AHEAD, seriesUrl } from '../lib/seriesUrl.js'
@@ -11,11 +13,18 @@ import { FAILED, READY, REFRESHING, getJson, useLoader } from '../lib/useFetch.j
 
 const DEBOUNCE_MS = 200
 
-export default function Screen1({ controls }) {
+export default function Screen1({ controls, onFailure }) {
   const url = seriesUrl(controls)
   const { data, status, message } = useLoader(url, () => getJson(url), {
     debounceMs: DEBOUNCE_MS,
   })
+
+  // The failure belongs to the page, not to this screen: when the server goes away both
+  // screens fail at once, and two copies of the same sentence stacked on top of each
+  // other reads like two different problems.
+  useEffect(() => {
+    onFailure(status === FAILED ? message : null)
+  }, [status, message, onFailure])
 
   const applied = data?.applied
   const settingSentence =
@@ -28,8 +37,6 @@ export default function Screen1({ controls }) {
       <h2 id="screen1-heading" className="screen-heading">
         What the forecast said, and what came
       </h2>
-
-      {status === FAILED && <p className="status error">{message}</p>}
 
       {!data && status !== FAILED && <p className="status">Loading data…</p>}
 
