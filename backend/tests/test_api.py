@@ -247,3 +247,57 @@ def test_the_new_routes_carry_the_api_prefix(path):
     """A Vercel service receives the ORIGINAL path, so /api is part of the route itself."""
     assert client.get(path).status_code == 200
     assert client.get(path.removeprefix("/api")).status_code == 404
+
+
+# ---------------------------------------------------------------------------- security
+
+
+def test_a_disallowed_origin_gets_no_cors_header():
+    """The Phase 8 exit check: a request from another website's address is refused.
+
+    The refusal is the browser's, and what makes it happen is the ABSENCE of an
+    Access-Control-Allow-Origin header naming that origin. So the thing to assert is that
+    the header does not come back - asserting a status code would pass even if the API
+    were wide open, because CORS never changes the status.
+    """
+    response = client.get("/api/health", headers={"Origin": "https://evil.example"})
+
+    assert response.status_code == 200
+    assert "access-control-allow-origin" not in response.headers
+
+
+def test_the_configured_origin_is_allowed():
+    """The other half: the allowlist has to actually let the app's own origin through,
+    or the middleware would be refusing everything and the test above would pass for
+    the wrong reason."""
+    response = client.get("/api/health", headers={"Origin": "http://localhost:5173"})
+
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+def test_the_allowlist_is_never_a_wildcard():
+    """The failure mode of adding CORS is making it looser, not tighter."""
+    from app.main import ALLOWED_ORIGINS
+
+    assert "*" not in ALLOWED_ORIGINS
+    assert ALLOWED_ORIGINS, "an empty allowlist would silently refuse the app itself"
+
+
+def test_a_preflight_from_a_disallowed_origin_is_not_granted():
+    response = client.options(
+        "/api/series",
+        headers={
+            "Origin": "https://evil.example",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert "access-control-allow-origin" not in response.headers
+
+
+@pytest.mark.parametrize("path", ["/docs", "/redoc", "/openapi.json", "/api/docs"])
+def test_the_interactive_docs_are_not_served(path):
+    """They were only unreachable in production by accident of routing, and fully live
+    on the backend container. Turned off in the app itself, so routing cannot re-expose
+    them."""
+    assert client.get(path).status_code == 404

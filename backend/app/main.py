@@ -34,6 +34,7 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.data_loading import load_actuals, load_forecasts
@@ -47,10 +48,43 @@ from app.serialisation import series_to_records
 # the container and Vercel override it.
 DATA_DIR = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else Path(__file__).resolve().parent.parent / "data"
 
+# Who may call this API, read from the environment so the allowed origin differs
+# between a laptop and production without a code change.
+#
+# Worth being precise about what this does and does not buy. The app never makes a
+# cross-origin request: on Vercel the page and the API share an origin, and locally the
+# Vite proxy makes them share one too. So this exists only to REFUSE other sites - and
+# with no middleware at all browsers already refuse, because no Access-Control-Allow-Origin
+# header comes back. The value here is that the allowlist is explicit and configurable.
+# The real risk is setting it looser, so "*" is the one thing it must never be.
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    if origin.strip()
+]
+
 app = FastAPI(
     title="Wind Forecast Checker",
     description="Day-ahead wind forecast accuracy for January 2026, from Elexon data.",
-    version="0.4.0",
+    version="0.5.0",
+    # The interactive docs are turned off rather than left to routing. They were only
+    # unreachable in production because Vercel's catch-all rewrite sends /docs to the
+    # frontend - an accident of routing, not a decision - and they were fully live on the
+    # backend container. This API has three endpoints and a README; it does not need to
+    # publish its own schema.
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    # No cookies or auth headers are used, so credentialed cross-origin requests are
+    # refused outright, and only the verb this read-only API actually serves is allowed.
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["*"],
 )
 
 # Loaded once at import, not per request. On a serverless cold start this is the
@@ -166,6 +200,21 @@ async def bad_request(request: Request, exc: BadRequest) -> JSONResponse:
     structure. Phase 8 audits that properly.
     """
     return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.exception_handler(Exception)
+async def unhandled(request: Request, exc: Exception) -> JSONResponse:
+    """Anything unexpected, as a short sentence rather than a stack trace.
+
+    Without this, an unanticipated error falls through to Starlette's default handler.
+    That already returns a bare "Internal Server Error" rather than a traceback, so this
+    is not closing a leak - it makes the guarantee explicit and gives the reply the same
+    JSON shape as every other error, so a client never has to parse two formats.
+    """
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Something went wrong handling that request."},
+    )
 
 
 @app.exception_handler(404)

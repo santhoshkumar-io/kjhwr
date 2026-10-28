@@ -12,6 +12,9 @@ services:
       - "8000:8000"
     environment:
       DATA_DIR: /srv/data
+      # Who may call the API cross-origin. The page itself is same-origin through the
+      # Vite proxy, so this only governs requests coming from other sites.
+      ALLOWED_ORIGINS: http://localhost:5173
 
   frontend:
     build: ./frontend
